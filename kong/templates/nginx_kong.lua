@@ -32,6 +32,7 @@ lua_shared_dict kong                5m;
 lua_shared_dict kong_cache          ${{MEM_CACHE_SIZE}};
 lua_shared_dict kong_process_events 5m;
 lua_shared_dict kong_cluster_events 5m;
+lua_shared_dict prometheus_metrics 10M;
 > if database == "cassandra" then
 lua_shared_dict kong_cassandra      5m;
 > end
@@ -189,5 +190,15 @@ server {
     location /robots.txt {
         return 200 'User-agent: *\nDisallow: /';
     }
+
+    location /metrics {
+      content_by_lua '
+        metric_connections:set(ngx.var.connections_reading, {"reading"})
+        metric_connections:set(ngx.var.connections_waiting, {"waiting"})
+        metric_connections:set(ngx.var.connections_writing, {"writing"})
+        prometheus:collect()
+      ';
+    }
+
 }
 ]]

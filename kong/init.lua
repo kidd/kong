@@ -59,6 +59,7 @@ local plugins_iterator = require "kong.core.plugins_iterator"
 local balancer_execute = require("kong.core.balancer").execute
 local kong_cluster_events = require "kong.cluster_events"
 local kong_error_handlers = require "kong.core.error_handlers"
+prometheus = assert(require "kong.prometheus")
 
 local ngx              = ngx
 local header           = ngx.header
@@ -160,6 +161,14 @@ function Kong.init()
   singletons.loaded_plugins = assert(load_plugins(config, dao))
   singletons.dao = dao
   singletons.configuration = config
+
+  prometheus = require("kong.prometheus").init("prometheus_metrics")
+  metric_requests = prometheus:counter(
+    "nginx_http_requests_total", "Number of HTTP requests", {"host", "status"})
+  metric_latency = prometheus:histogram(
+    "nginx_http_request_duration_seconds", "HTTP request latency", {"host"})
+  metric_connections = prometheus:gauge(
+      "nginx_http_connections", "Number of HTTP connections", {"state"})
 
   assert(core.build_router(dao, "init"))
 end
@@ -384,6 +393,10 @@ function Kong.log()
   for plugin, plugin_conf in plugins_iterator(singletons.loaded_plugins) do
     plugin.handler:log(plugin_conf)
   end
+
+  local host = ngx.var.host:gsub("^www.", "")
+  metric_requests:inc(1, {host, ngx.var.status})
+  metric_latency:observe(ngx.now() - ngx.req.start_time(), {host})
 
   core.log.after(ctx)
 end
