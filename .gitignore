@@ -3,8 +3,9 @@
 .buildpath
 .project
 .idea
+*~
 
-servroot*
+  servroot*
 
 # kong
 nginx_tmp/
