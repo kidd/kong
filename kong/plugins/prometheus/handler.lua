@@ -13,3 +13,5 @@ end
 function PrometheusHandler:log(conf)
   PrometheusHandler.super.log(self)
 end
+
+return PrometheusHandler

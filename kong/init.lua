@@ -394,10 +394,6 @@ function Kong.log()
     plugin.handler:log(plugin_conf)
   end
 
-  local host = ngx.var.host:gsub("^www.", "")
-  metric_requests:inc(1, {host, ngx.var.status})
-  metric_latency:observe(ngx.now() - ngx.req.start_time(), {host})
-
   core.log.after(ctx)
 end
 
