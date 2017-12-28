@@ -278,5 +278,11 @@ build = {
 
     ["kong.plugins.request-termination.handler"] = "kong/plugins/request-termination/handler.lua",
     ["kong.plugins.request-termination.schema"] = "kong/plugins/request-termination/schema.lua",
+
+    ["kong.plugins.prometheus.handler"] = "kong/plugins/prometheus/handler.lua",
+    ["kong.plugins.prometheus.schema"] = "kong/plugins/prometheus/schema.lua",
+    ["kong.plugins.prometheus.api"] = "kong/plugins/prometheus/api.lua",
+    ["kong.prometheus"] = "kong/prometheus.lua",
+
   }
 }
