@@ -26,6 +26,8 @@
 
 require "luarocks.loader"
 require "resty.core"
+i = require('inspect')
+pinspect = function (o) ngx.log(ngx.ERR, i(o)) end
 
 do
   -- let's ensure the required shared dictionaries are
@@ -59,7 +61,9 @@ local plugins_iterator = require "kong.core.plugins_iterator"
 local balancer_execute = require("kong.core.balancer").execute
 local kong_cluster_events = require "kong.cluster_events"
 local kong_error_handlers = require "kong.core.error_handlers"
-prometheus = assert(require "kong.prometheus")
+
+-- .init creates an object we should keep along all the run.
+prometheus = assert(require "kong.prometheus").init("prometheus_metrics")
 
 local ngx              = ngx
 local header           = ngx.header
@@ -161,14 +165,6 @@ function Kong.init()
   singletons.loaded_plugins = assert(load_plugins(config, dao))
   singletons.dao = dao
   singletons.configuration = config
-
-  prometheus = require("kong.prometheus").init("prometheus_metrics")
-  metric_requests = prometheus:counter(
-    "nginx_http_requests_total", "Number of HTTP requests", {"host", "status"})
-  metric_latency = prometheus:histogram(
-    "nginx_http_request_duration_seconds", "HTTP request latency", {"host"})
-  metric_connections = prometheus:gauge(
-      "nginx_http_connections", "Number of HTTP connections", {"state"})
 
   assert(core.build_router(dao, "init"))
 end
