@@ -21,7 +21,6 @@ PrometheusHandler.VERSION = "0.1.0"
 
 function PrometheusHandler:new()
   PrometheusHandler.super.new(self, "prometheus")
-
   self.prometheus = prometheus
   self.metrics = {}
   -- self.metrics =  initialize_metrics(prometheus) -- how to access the configs?
@@ -32,7 +31,7 @@ local metrics = {
   end
 }
 
-local function log(premature, conf, message, prometheus)
+local function log(premature, conf, message, self)
   if premature then
     return
   end
@@ -40,8 +39,8 @@ local function log(premature, conf, message, prometheus)
   local api_name   = string_gsub(message.api.name, "%.", "_")
 
   local stat_value = {
-    request_size     = message.request.size,
-    response_size    = message.response.size,
+    request_size     = tonumber(message.request.size),
+    response_size    = tonumber(message.response.size),
     latency          = message.latencies.request,
     upstream_latency = message.latencies.proxy,
     kong_latency     = message.latencies.kong,
@@ -51,42 +50,45 @@ local function log(premature, conf, message, prometheus)
   local host = api_name
   local status = message.response.status
 
-  global_metrics.metric_requests:inc(1, {host, status})
-  global_metrics.upstream_latency:observe(stat_value.upstream_latency, {host})
-  global_metrics.latency:observe(stat_value.latency, {host})
-  global_metrics.kong_latency:observe(stat_value.kong_latency, {host})
 
-  global_metrics.request_size:observe(stat_value.request_size, {host})
-  global_metrics.response_size:observe(stat_value.response_size, {host})
+  ngx_log(NGX_ERR, inspect(stat_value))
+
+  self.global_metrics.metric_requests:inc(1, {host, status})
+  self.global_metrics.upstream_latency:observe(stat_value.upstream_latency, {host})
+  self.global_metrics.latency:observe(stat_value.latency, {host})
+  self.global_metrics.kong_latency:observe(stat_value.kong_latency, {host})
+
+  self.global_metrics.request_size:observe(stat_value.request_size, {host})
+  self.global_metrics.response_size:observe(stat_value.response_size, {host})
 end
 
 
-local function create_metrics()
+local function create_metrics(self)
   return {
-    metric_requests = prometheus:counter("nginx_http_requests_total",
-                                         "Number of HTTP requests",
-                                         {"host", "status"}),
-    request_size = prometheus:histogram(
+    metric_requests = self.prometheus:counter("nginx_http_requests_total",
+                                              "Number of HTTP requests",
+                                              {"host", "status"}),
+    request_size = self.prometheus:histogram(
       "nginx_http_request_size",
       "Request size",
       {"host"}),
-    response_size = prometheus:histogram(
+    response_size = self.prometheus:histogram(
       "nginx_http_response_size",
       "Response size",
       {"host"}),
-    latency = prometheus:histogram(
+    latency = self.prometheus:histogram(
       "nginx_http_request_total_duration_seconds",
       "HTTP request total latency",
       {"host"}),
-    upstream_latency = prometheus:histogram(
+    upstream_latency = self.prometheus:histogram(
       "nginx_http_request_upstream_duration_seconds",
       "HTTP request upstream latency",
       {"host"}),
-    kong_latency = prometheus:histogram(
+    kong_latency = self.prometheus:histogram(
       "nginx_http_request_kong_duration_seconds",
       "HTTP request kong latency",
       {"host"}),
-    metric_connections = prometheus:gauge(
+    metric_connections = self.prometheus:gauge(
       "nginx_http_connections",
       "Number of HTTP connections",
       {"state"})
@@ -103,10 +105,9 @@ function PrometheusHandler:log(conf)
 
   local message = basic_serializer.serialize(ngx)
 
-  local i =  require'inspect'
-  ngx_log(NGX_ERR, i(message))
+  ngx_log(NGX_ERR, "logging prometheus metrics")
 
-  global_metrics = global_metrics or create_metrics()
+  self.global_metrics = self.global_metrics or create_metrics(self)
 
   local ok, err = ngx_timer_at(0, log, conf, message, self)
   if not ok then
