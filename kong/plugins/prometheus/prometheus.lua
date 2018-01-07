@@ -510,10 +510,6 @@ function Prometheus:collect()
     if value then
       local short_name = short_metric_name(key)
       if not seen_metrics[short_name] then
-        if self.help[short_name] then
-          table.insert(output, string.format("# HELP %s%s %s\n",
-            self.prefix, short_name, self.help[short_name]))
-        end
         if self.type[short_name] then
           table.insert(output, string.format("# TYPE %s%s %s\n",
             self.prefix, short_name, self.type[short_name]))

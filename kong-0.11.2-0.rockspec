@@ -282,7 +282,7 @@ build = {
     ["kong.plugins.prometheus.handler"] = "kong/plugins/prometheus/handler.lua",
     ["kong.plugins.prometheus.schema"] = "kong/plugins/prometheus/schema.lua",
     ["kong.plugins.prometheus.api"] = "kong/plugins/prometheus/api.lua",
-    ["kong.prometheus"] = "kong/prometheus.lua",
+    ["kong.plugins.prometheus.prometheus"] = "kong/plugins/prometheus/prometheus.lua",
 
   }
 }

@@ -62,9 +62,6 @@ local balancer_execute = require("kong.core.balancer").execute
 local kong_cluster_events = require "kong.cluster_events"
 local kong_error_handlers = require "kong.core.error_handlers"
 
--- .init creates an object we should keep along all the run.
-prometheus = assert(require "kong.prometheus").init("prometheus_metrics")
-
 local ngx              = ngx
 local header           = ngx.header
 local ipairs           = ipairs

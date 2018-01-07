@@ -9,6 +9,10 @@ local string_gsub   = string.gsub
 local pairs         = pairs
 local string_format = string.format
 local NGX_ERR       = ngx.ERR
+local inspect =  require'inspect'
+
+-- .init creates an object we should keep along all the run.
+prometheus = assert(require "kong.plugins.prometheus.prometheus").init("prometheus_metrics")
 
 
 local PrometheusHandler    = BasePlugin:extend()
